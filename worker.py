@@ -56,61 +56,59 @@ class MessageProcessor:
             log.info("worker waiting for data")
             data = await self.queue.get()
             try:
-                typ = (data.get("type") or "").lower()
+                msg_type = data.get("type")
 
-                if typ == "measurement":
-                    mid = data.get("id")
-                    if not mid:
-                        log.info("measurement without id, skipping")
+                # 0) session_summary – uložiť štatistiky
+                if msg_type == "session_summary":
+                    await self.repo.upsert_session_stats(data)
+                    log.info("session_summary stored for session_id=%s",
+                             data.get("session_id"))
+                    continue
+
+                # 0b) samostatný rámec s rtt_updates (flush)
+                if msg_type == "rtt_updates":
+                    updates: List[Dict[str, Any]] = data.get("items") or []
+                    for upd in updates:
+                        uid = upd.get("id")
+                        rtt = upd.get("rtt_ms")
+                        if uid is None or rtt is None:
+                            continue
+                        try:
+                            await self.repo.apply_rtt(str(uid), float(rtt))
+                        except Exception:
+                            log.info("apply_rtt failed for id=%s (flush)", uid)
+                    continue
+
+                # 1) štandardný measurement
+                if msg_type != "measurement":
+                    log.info("ignoring message type=%s", msg_type)
+                    continue
+
+                mid = data.get("id")
+                if not mid:
+                    log.info("measurement without id, skipping")
+                    continue
+
+                try:
+                    await self.repo.insert_measurement_flat(data)
+                except Exception:
+                    log.info("insert_measurement_flat failed for id=%s", mid)
+
+                # 2) RTT updaty v rámci payloadu
+                updates: List[Dict[str, Any]] = (data.get("rtt_updates") or [])
+                for upd in updates:
+                    uid = upd.get("id")
+                    rtt = upd.get("rtt_ms")
+                    if uid is None or rtt is None:
                         continue
-
-                    # 1) insert measurement (ploché polia), idempotentne
                     try:
-                        await self.repo.insert_measurement_flat(data)
+                        await self.repo.apply_rtt(str(uid), float(rtt))
                     except Exception:
-                        log.exception(
-                            "insert_measurement_flat failed for id=%s", mid)
-
-                    # 2) rtt_updates priložené v measurement-e (voliteľné)
-                    updates = data.get("rtt_updates") or []
-                    if updates:
-                        for upd in updates:
-                            uid = upd.get("id")
-                            rtt = upd.get("rtt_ms")
-                            if uid is None or rtt is None:
-                                continue
-                            try:
-                                await self.repo.apply_rtt(str(uid), float(rtt))
-                            except Exception:
-                                log.exception(
-                                    "apply_rtt failed for id=%s (from carrier=%s)", uid, mid)
-
-                elif typ == "rtt_updates":
-                    # flush rámec z klienta: {"type":"rtt_updates","items":[{"id":"...","rtt_ms":...}, ...]}
-                    items = data.get("items") or []
-                    if not isinstance(items, list):
-                        log.info("rtt_updates has no list 'items'; ignoring")
-                    else:
-                        applied = 0
-                        for upd in items:
-                            uid = upd.get("id")
-                            rtt = upd.get("rtt_ms")
-                            if uid is None or rtt is None:
-                                continue
-                            try:
-                                await self.repo.apply_rtt(str(uid), float(rtt))
-                                applied += 1
-                            except Exception:
-                                log.exception(
-                                    "apply_rtt failed for id=%s (flush)", uid)
-                        log.info("rtt_updates applied=%d", applied)
-
-                else:
-                    # probe alebo neznáme typy
-                    log.info("ignoring message type=%s", typ or "<none>")
+                        log.info(
+                            "apply_rtt failed for id=%s (from carrier=%s)", uid, mid)
 
             except Exception:
-                log.exception("worker failed on unexpected error")
+                log.info("worker failed on unexpected error")
             finally:
                 log.info("worker task done")
                 self.queue.task_done()

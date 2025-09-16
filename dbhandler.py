@@ -1,12 +1,12 @@
 # dbhandler.py
 from __future__ import annotations
-from models import Base, Measurement
+from models import Base, Measurement, SessionStats
 import os
 from typing import Any, Dict, Optional
 from logger import get_logger, setup_logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import update
+from sqlalchemy import update, text, func
 
 setup_logging()
 log = get_logger("dbhandler")
@@ -65,6 +65,39 @@ class PostgresRepository:
                 update(Measurement)
                 .where(Measurement.id == meas_id, Measurement.rtt_ms.is_(None))
                 .values(rtt_ms=float(rtt_ms))
+            )
+            await s.execute(stmt)
+            await s.commit()
+
+    async def upsert_session_stats(self, payload: Dict[str, Any]) -> None:
+        """
+        Idempotentne uloží summary pre session_id.
+        Ak záznam existuje, spraví UPDATE (napr. ak to pošleš 2x).
+        """
+        sid = _s(payload.get("session_id"))
+        if not sid:
+            log.info("upsert_session_stats: missing session_id")
+            return
+
+        values = {
+            "session_id": sid,
+            "started_at_ms": _i(payload.get("started_at_ms")),
+            "ended_at_ms": _i(payload.get("ended_at_ms")),
+            "reconnect_count": _i(payload.get("reconnect_count")) or 0,
+            "total_downtime_ms": _i(payload.get("total_downtime_ms")) or 0,
+        }
+
+        async with self._sf() as s:
+            stmt = insert(SessionStats).values(**values)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["session_id"],
+                set_={
+                    "started_at_ms": stmt.excluded.started_at_ms,
+                    "ended_at_ms": stmt.excluded.ended_at_ms,
+                    "reconnect_count": stmt.excluded.reconnect_count,
+                    "total_downtime_ms": stmt.excluded.total_downtime_ms,
+                    "updated_at": func.now(),
+                },
             )
             await s.execute(stmt)
             await s.commit()
