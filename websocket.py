@@ -10,6 +10,14 @@ log = get_logger("websocket")
 router = APIRouter()
 
 
+def _preview(obj, maxlen=2000):
+    try:
+        s = json.dumps(obj, ensure_ascii=False)
+    except Exception:
+        s = str(obj)
+    return (s[:maxlen] + "…") if len(s) > maxlen else s
+
+
 class WsController:
     def __init__(self, processor: MessageProcessor):
         self.processor = processor
@@ -29,6 +37,8 @@ class WsController:
                     # nevalidný JSON – neACK-uj, nenúť worker, len zaloguj
                     log.info("Invalid JSON (ignored)")
                     continue
+
+                log.info("RX payload: %s", _preview(data, maxlen=1200))
 
                 mid = data.get("id")
                 if mid:

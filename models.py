@@ -17,8 +17,11 @@ class Measurement(Base):
     # Primárny kľúč od klienta (napr. "m123")
     Id: Mapped[str] = mapped_column(String, primary_key=True)
 
+    SessionId: Mapped[str | None] = mapped_column(
+        String, nullable=True, index=True)
+
     # Čas odoslania z klienta v ms (wall-clock z mobilu)
-    Timestamps: Mapped[Optional[int]] = mapped_column(
+    Timestamp: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True)
 
     # GPS
@@ -35,7 +38,6 @@ class Measurement(Base):
         String(16), nullable=True)
 
     # New fields
-    SessionId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     NetworkMode: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     LTERSSI: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     CGI: Mapped[Optional[str]] = mapped_column(String, nullable=True)

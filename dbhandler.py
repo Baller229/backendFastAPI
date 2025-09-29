@@ -53,7 +53,7 @@ class PostgresRepository:
         m = _extract_fields(payload)
         async with self._sf() as s:
             stmt = insert(Measurement).values(
-                **m).on_conflict_do_nothing(index_elements=["id"])
+                **m).on_conflict_do_nothing(index_elements=[Measurement.Id])
             await s.execute(stmt)
             await s.commit()
 
@@ -63,8 +63,8 @@ class PostgresRepository:
         async with self._sf() as s:
             stmt = (
                 update(Measurement)
-                .where(Measurement.id == meas_id, Measurement.rtt_ms.is_(None))
-                .values(rtt_ms=float(rtt_ms))
+                .where(Measurement.Id == meas_id, Measurement.RTT_ms.is_(None))
+                .values(RTT_ms=float(rtt_ms))
             )
             await s.execute(stmt)
             await s.commit()
@@ -110,8 +110,9 @@ def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     pos = data.get("position") or {}
 
     return {
-        "Id": data.get("id"),
-        "Timestamp": data.get("timestamp_sent"),
+        "Id": _s(data.get("id")),
+        "SessionId": _s(data.get("session_id")),
+        "Timestamp": _i(data.get("timestamp_sent")),
         "Latitude": _f(pos.get("lat")),
         "Longitude": _f(pos.get("lon")),
         "Speed": _f(pos.get("speed_kmh")),
@@ -120,13 +121,12 @@ def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
         "SNR": _i(radio.get("sinr")),
         "CellID": _i(radio.get("cell_id")),
         "NetworkTech": _s(radio.get("network_type")),
-        "SessionId": _s(data.get("session_id")),
-        "NetworkMode": _s(data.get("network_mode")),
-        "LTERSSI": _i(data.get("lte_rssi")),
-        "CGI": _s(data.get("cgi")),
-        "SERVINGTIME": _i(data.get("serving_time_ms")),
-        "BAND": _s(data.get("band")),
-        "BANDWIDTH": _i(data.get("bandwidth_mhz")),
+        "NetworkMode": _s(radio.get("network_mode")),
+        "LTERSSI": _i(radio.get("lte_rssi")),
+        "CGI": _s(radio.get("cgi")),
+        "SERVINGTIME": _i(radio.get("serving_time_ms")),
+        "BAND": _s(radio.get("band")),
+        "BANDWIDTH": _i(radio.get("bandwidth_khz")),
 
         # rtt_ms sem NEPOSIELAJ – to sa dopĺňa až cez apply_rtt()
     }
