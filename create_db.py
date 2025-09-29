@@ -7,6 +7,7 @@ from sqlalchemy import text
 from models import Base
 from dbhandler import _ensure_asyncpg, DATABASE_URL
 
+
 async def main():
     dsn = _ensure_asyncpg(os.getenv("DATABASE_URL", DATABASE_URL))
     recreate = "--recreate" in sys.argv

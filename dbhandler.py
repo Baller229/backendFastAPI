@@ -108,23 +108,26 @@ def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     log.info("Extracting fields from data")
     radio = data.get("radio") or {}
     pos = data.get("position") or {}
-    dev = data.get("device") or {}
-    v2x = data.get("v2x") or {}
 
     return {
-        "id": data.get("id"),
-        "timestamp_ms": data.get("timestamp_sent"),
-        "lat": _f(pos.get("lat")),
-        "lon": _f(pos.get("lon")),
-        "speed_kmh": _f(pos.get("speed_kmh")),
-        "rsrp": _i(radio.get("rsrp")),
-        "rsrq": _i(radio.get("rsrq")),
-        "sinr": _i(radio.get("sinr")),
-        "cell_id": _i(radio.get("cell_id")),
-        "network_type": _s(radio.get("network_type")),
-        "operator": _s(dev.get("operator")),
-        "device_id": _s(dev.get("device_id")),
-        "v2x_kind": _s(v2x.get("kind")),
+        "Id": data.get("id"),
+        "Timestamp": data.get("timestamp_sent"),
+        "Latitude": _f(pos.get("lat")),
+        "Longitude": _f(pos.get("lon")),
+        "Speed": _f(pos.get("speed_kmh")),
+        "Level": _i(radio.get("rsrp")),
+        "Qual": _i(radio.get("rsrq")),
+        "SNR": _i(radio.get("sinr")),
+        "CellID": _i(radio.get("cell_id")),
+        "NetworkTech": _s(radio.get("network_type")),
+        "SessionId": _s(data.get("session_id")),
+        "NetworkMode": _s(data.get("network_mode")),
+        "LTERSSI": _i(data.get("lte_rssi")),
+        "CGI": _s(data.get("cgi")),
+        "SERVINGTIME": _i(data.get("serving_time_ms")),
+        "BAND": _s(data.get("band")),
+        "BANDWIDTH": _i(data.get("bandwidth_mhz")),
+
         # rtt_ms sem NEPOSIELAJ – to sa dopĺňa až cez apply_rtt()
     }
 
