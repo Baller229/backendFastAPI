@@ -127,6 +127,7 @@ def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
         "SERVINGTIME": _i(radio.get("serving_time_ms")),
         "BAND": _s(radio.get("band")),
         "BANDWIDTH": _i(radio.get("bandwidth_khz")),
+        "Outage": bool(data.get("outage")) if data.get("outage") is not None else None,
 
         # rtt_ms sem NEPOSIELAJ – to sa dopĺňa až cez apply_rtt()
     }

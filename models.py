@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, Float, Integer, BigInteger, DateTime, func
+from sqlalchemy import Boolean, String, Float, Integer, BigInteger, DateTime, func
 
 
 class Base(DeclarativeBase):
@@ -45,6 +45,7 @@ class Measurement(Base):
         BigInteger, nullable=True)
     BAND: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     BANDWIDTH: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    Outage: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
     # V2X – len typ, payload si rieš mimo (ak chceš vôbec)
     # V2X_KIND: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
