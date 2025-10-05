@@ -34,7 +34,7 @@ class WsController:
                 try:
                     data = json.loads(raw)
                 except Exception:
-                    # nevalidný JSON – neACK-uj, nenúť worker, len zaloguj
+
                     log.info("Invalid JSON (ignored)")
                     continue
 

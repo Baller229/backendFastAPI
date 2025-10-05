@@ -7,13 +7,16 @@ from logger import get_logger, setup_logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import update, text, func
+from dotenv import load_dotenv
+
 
 setup_logging()
 log = get_logger("dbhandler")
 
+load_dotenv()
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://drive_user:admin@localhost:8080/drive_test")
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def _ensure_asyncpg(dsn: str) -> str:
@@ -129,7 +132,6 @@ def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
         "BANDWIDTH": _i(radio.get("bandwidth_khz")),
         "Outage": bool(data.get("outage")) if data.get("outage") is not None else None,
 
-        # rtt_ms sem NEPOSIELAJ – to sa dopĺňa až cez apply_rtt()
     }
 
 

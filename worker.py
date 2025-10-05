@@ -31,7 +31,7 @@ class MessageProcessor:
             self._run(), name="measurement-worker")
 
     async def stop(self, drain: bool = True) -> None:
-        # signal na zastavenie; voliteľne vyprázdnime queue
+        # signal na zastavenie
         self._stopping.set()
         if drain:
             await self.queue.join()
@@ -58,7 +58,7 @@ class MessageProcessor:
             try:
                 msg_type = data.get("type")
 
-                # 0) session_summary – uložiť štatistiky
+                # 0) session_summary
                 if msg_type == "session_summary":
                     await self.repo.upsert_session_stats(data)
                     log.info("session_summary stored for session_id=%s",
@@ -79,7 +79,7 @@ class MessageProcessor:
                             log.info("apply_rtt failed for id=%s (flush)", uid)
                     continue
 
-                # 1) štandardný measurement
+                # 1) measurement
                 if msg_type != "measurement":
                     log.info("ignoring message type=%s", msg_type)
                     continue

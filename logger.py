@@ -5,7 +5,6 @@ import sys
 
 
 def setup_logging(level: str | None = None) -> None:
-    # zabrániť dvojitej konfigurácii (napr. pri --reload)
     if getattr(setup_logging, "_configured", False):
         return
 
@@ -18,15 +17,14 @@ def setup_logging(level: str | None = None) -> None:
         format=fmt,
         datefmt=datefmt,
         stream=sys.stdout,
-        force=True,  # prepíše prípadnú default konfiguráciu
+        force=True,
     )
 
-    # utíš šum a zlaď úroveň uvicornu
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     logging.getLogger("uvicorn.error").setLevel(level)
     logging.getLogger("uvicorn.access").setLevel(level)
 
-    setup_logging._configured = True  # type: ignore[attr-defined]
+    setup_logging._configured = True
 
 
 def get_logger(name: str = "app") -> logging.Logger:

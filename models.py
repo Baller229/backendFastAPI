@@ -14,13 +14,11 @@ class Base(DeclarativeBase):
 class Measurement(Base):
     __tablename__ = "measurements"
 
-    # Primárny kľúč od klienta (napr. "m123")
     Id: Mapped[str] = mapped_column(String, primary_key=True)
 
     SessionId: Mapped[str | None] = mapped_column(
         String, nullable=True, index=True)
 
-    # Čas odoslania z klienta v ms (wall-clock z mobilu)
     Timestamp: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True)
 
@@ -47,24 +45,18 @@ class Measurement(Base):
     BANDWIDTH: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     Outage: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
-    # V2X – len typ, payload si rieš mimo (ak chceš vôbec)
-    # V2X_KIND: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
-
-    # RTT dopĺňané neskôr idempotentne
     RTT_ms: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
 
 class SessionStats(Base):
     __tablename__ = "session_stats"
 
-    # Primárny kľúč od klienta (napr. "s123")
     session_id: Mapped[str] = mapped_column(String, primary_key=True)
 
     started_at_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
     ended_at_ms: Mapped[int] = mapped_column(BigInteger, nullable=True)
 
-    # Počet meraní v session
     reconnect_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0)
 
