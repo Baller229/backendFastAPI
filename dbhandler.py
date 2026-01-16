@@ -2,7 +2,7 @@
 from __future__ import annotations
 from models import Base, Measurement, SessionStats
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from logger import get_logger, setup_logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.dialects.postgresql import insert
@@ -106,11 +106,37 @@ class PostgresRepository:
             await s.commit()
 
 
+def _get_neighbor_list(radio: Dict[str, Any]) -> List[Dict[str, Any]]:
+    n = radio.get("neighbors")
+    if not isinstance(n, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for item in n:
+        if isinstance(item, dict):
+            out.append(item)
+        if len(out) >= 3:
+            break
+    return out
+
+
+def _neighbor_get_int(n: Dict[str, Any], *keys: str) -> Optional[int]:
+    for k in keys:
+        if k in n and n.get(k) is not None:
+            return _i(n.get(k))
+    return None
+
+
 def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     """Bezpečne vytiahne hodnoty z vnoreného JSONu do plochej mapy stĺpcov."""
     log.info("Extracting fields from data")
     radio = data.get("radio") or {}
     pos = data.get("position") or {}
+
+    neighbors = _get_neighbor_list(radio)
+
+    n1 = neighbors[0] if len(neighbors) > 0 else {}
+    n2 = neighbors[1] if len(neighbors) > 1 else {}
+    n3 = neighbors[2] if len(neighbors) > 2 else {}
 
     return {
         "Id": _s(data.get("id")),
@@ -131,6 +157,22 @@ def _extract_fields(data: Dict[str, Any]) -> Dict[str, Any]:
         "BAND": _s(radio.get("band")),
         "BANDWIDTH": _i(radio.get("bandwidth_khz")),
         "Outage": bool(data.get("outage")) if data.get("outage") is not None else None,
+
+        # -------- neighbors (max 3) --------
+        # CellID
+        "CellID_n1": _neighbor_get_int(n1, "cell_id", "cellId", "cid", "CellID"),
+        "CellID_n2": _neighbor_get_int(n2, "cell_id", "cellId", "cid", "CellID"),
+        "CellID_n3": _neighbor_get_int(n3, "cell_id", "cellId", "cid", "CellID"),
+
+        # Level (RSRP-like)
+        "Level_n1": _neighbor_get_int(n1, "level", "rsrp", "Level"),
+        "Level_n2": _neighbor_get_int(n2, "level", "rsrp", "Level"),
+        "Level_n3": _neighbor_get_int(n3, "level", "rsrp", "Level"),
+
+        # Qual (RSRQ-like)
+        "Qual_n1": _neighbor_get_int(n1, "qual", "rsrq", "Qual"),
+        "Qual_n2": _neighbor_get_int(n2, "qual", "rsrq", "Qual"),
+        "Qual_n3": _neighbor_get_int(n3, "qual", "rsrq", "Qual"),
 
     }
 

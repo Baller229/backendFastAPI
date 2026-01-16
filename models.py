@@ -47,6 +47,19 @@ class Measurement(Base):
 
     RTT_ms: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
+    # Neighbour cells (max 3)
+    CellID_n1: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    Level_n1: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    Qual_n1: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    CellID_n2: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    Level_n2: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    Qual_n2: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    CellID_n3: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    Level_n3: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    Qual_n3: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
 
 class SessionStats(Base):
     __tablename__ = "session_stats"
